@@ -1,5 +1,5 @@
 import { type Provider, type Capability } from '../types/provider.js';
-import { Provider as ProviderEnum, getModelForProvider, getCapabilityForModel, MODEL_MAPPINGS } from '../types/provider.js';
+import { Provider as ProviderEnum, getModelForProvider, getCapabilityForModel, MODEL_MAPPINGS, findModelMapping } from '../types/provider.js';
 import { type FallbackChainEntry } from '../types/routing.js';
 import { ProviderError } from '../types/request.js';
 import { type RouterResult, type RouterExecuteResult } from '../types/routing.js';
@@ -10,6 +10,10 @@ import { RateLimitTracker } from './RateLimitTracker.js';
 import { RequestQueue } from './RequestQueue.js';
 import { normalizeHeaders } from '../utils/headers.js';
 
+export interface RouterLogger {
+  warn(obj: Record<string, unknown>, msg: string): void;
+}
+
 export interface RouterConfig {
   providerPriority: Provider[];
   defaultStrategy: RoutingStrategy;
@@ -17,6 +21,7 @@ export interface RouterConfig {
   rateLimitTracker: RateLimitTracker;
   queue: RequestQueue;
   adapters: Map<Provider, ProviderAdapter>;
+  logger?: RouterLogger;
 }
 
 export class Router {
@@ -72,6 +77,7 @@ export class Router {
     body?: unknown
   ): Promise<RouterResult> {
     const chain = this.buildFallbackChain(requestedModel, capability, strategy);
+    const firstProvider = chain[0]?.provider;
 
     for (const { provider, model } of chain) {
       if (!this.config.circuitBreaker.isAvailable(provider)) continue;
@@ -88,6 +94,15 @@ export class Router {
         );
         this.config.rateLimitTracker.update(provider, model, headers, response.status);
         this.config.circuitBreaker.recordSuccess(provider);
+
+        if (this.config.logger && provider !== firstProvider) {
+          const usedTier = findModelMapping(model)?.tier;
+          const preferredTier = findModelMapping(requestedModel)?.tier;
+          this.config.logger.warn(
+            { requestedModel, usedProvider: provider, usedModel: model, usedTier, preferredTier },
+            'ai-router: fallback occurred'
+          );
+        }
 
         return {
           provider,

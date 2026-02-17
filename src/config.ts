@@ -35,6 +35,10 @@ const envSchema = z.object({
 
   // Rate Limit Proactive Avoidance
   RATE_LIMIT_LOW_REQUESTS_THRESHOLD: z.coerce.number().int().nonnegative().default(5),
+
+  // Redis (optional — enables persistent state + multi-instance coordination)
+  // Accepts redis://, rediss://, or socket paths
+  REDIS_URL: z.string().optional(),
 });
 
 function loadConfig(): z.infer<typeof envSchema> {

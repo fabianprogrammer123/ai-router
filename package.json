@@ -19,6 +19,7 @@
   "dependencies": {
     "fastify": "^4.28.1",
     "@fastify/cors": "^9.0.1",
+    "ioredis": "^5.3.2",
     "undici": "^6.21.0",
     "zod": "^3.23.8",
     "pino": "^9.5.0"

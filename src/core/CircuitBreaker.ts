@@ -2,7 +2,7 @@ import { type Provider } from '../types/provider.js';
 
 type CircuitState = 'closed' | 'open' | 'half-open';
 
-interface ProviderCircuit {
+export interface ProviderCircuit {
   state: CircuitState;
   failureCount: number;
   openedAt: number; // epoch ms; 0 = not open
@@ -10,9 +10,9 @@ interface ProviderCircuit {
 }
 
 export class CircuitBreaker {
-  private readonly circuits = new Map<Provider, ProviderCircuit>();
-  private readonly failureThreshold: number;
-  private readonly cooldownMs: number;
+  protected readonly circuits = new Map<Provider, ProviderCircuit>();
+  protected readonly failureThreshold: number;
+  protected readonly cooldownMs: number;
 
   constructor(failureThreshold: number, cooldownMs: number) {
     this.failureThreshold = failureThreshold;

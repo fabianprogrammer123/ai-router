@@ -82,6 +82,7 @@ const openai = new OpenAI({
 | `OPENAI_API_KEY` | * | — | OpenAI API key (\*at least one provider required) |
 | `ANTHROPIC_API_KEY` | * | — | Anthropic API key |
 | `GOOGLE_API_KEY` | * | — | Google AI API key |
+| `REDIS_URL` | | — | Redis URL — enables persistent state + multi-instance coordination |
 | `PORT` | | `3000` | Server port |
 | `PROVIDER_PRIORITY` | | `openai,anthropic,google` | Fallback order |
 | `DEFAULT_ROUTING_STRATEGY` | | `fallback` | `fallback`, `round-robin`, or `latency` |
@@ -164,17 +165,56 @@ npm run typecheck
 npm run lint
 ```
 
+## Redis — Persistent State
+
+By default the router runs fully in-memory. Adding `REDIS_URL` enables:
+
+- **State persistence** — rate limit cooldowns and circuit breaker state survive restarts
+- **Multi-instance coordination** — run multiple router instances behind a load balancer; all share the same rate limit view and async job queue
+
+```bash
+# docker-compose.yml already includes Redis — just start it:
+docker compose up -d
+
+# Or point to an existing Redis:
+REDIS_URL=redis://localhost:6379
+```
+
+If Redis becomes unavailable, the router **falls back to in-memory automatically** — no crashes, no dropped requests. Logs a warning: `ai-router: Redis connection error — running in-memory fallback`.
+
+## Response Headers
+
+Every successful response includes:
+
+| Header | Example | Description |
+|--------|---------|-------------|
+| `x-ai-router-provider` | `openai` | Which provider served the request |
+| `x-ai-router-model` | `gpt-4o` | Which model was used |
+
+These let you detect when fallback routing occurred:
+
+```typescript
+const res = await openai.chat.completions.create({ ... });
+// Check via raw HTTP headers if using fetch:
+const provider = response.headers.get('x-ai-router-provider');
+if (provider !== 'openai') console.warn(`Fallback: served by ${provider}`);
+```
+
 ## Deployment
 
-### Railway / Render / Fly.io
-1. Connect your GitHub repo
-2. Set all required environment variables
-3. Deploy — the Docker image is auto-built from `docker/Dockerfile`
+See [docs/deployment.md](docs/deployment.md) for full guides covering Railway, Render, Fly.io, VPS, and local Docker.
 
-### Manual Docker
+### Quick — Manual Docker
 ```bash
 docker build -f docker/Dockerfile -t ai-router .
 docker run -p 3000:3000 --env-file .env ai-router
+```
+
+### Scale to multiple instances
+```bash
+# Requires Redis (included in docker-compose.yml)
+docker compose up -d --scale ai-router=2
+# Add nginx (see docker/nginx.conf) for load balancing
 ```
 
 ## Security

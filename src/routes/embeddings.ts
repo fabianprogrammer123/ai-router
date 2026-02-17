@@ -53,6 +53,8 @@ export function createEmbeddingRoutes(router: Router, routerApiKey: string) {
             });
           }
 
+          void reply.header('x-ai-router-provider', result.provider);
+          void reply.header('x-ai-router-model', result.model);
           return reply.status(200).send(result.response.body);
         } catch (err) {
           const statusCode =

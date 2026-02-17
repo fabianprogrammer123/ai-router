@@ -7,12 +7,12 @@ import { sleep } from '../utils/retry.js';
 export type DrainFunction = (jobId: string, capability: Capability, requestedModel: string, signal: AbortSignal, body?: unknown) => Promise<RouterResult>;
 
 export class RequestQueue {
-  private readonly jobs = new Map<string, QueueJob>();
-  private readonly maxSize: number;
-  private readonly timeoutMs: number;
-  private readonly asyncThresholdMs: number;
-  private drainTimer: ReturnType<typeof setTimeout> | null = null;
-  private drainFn: DrainFunction | null = null;
+  protected readonly jobs = new Map<string, QueueJob>();
+  protected readonly maxSize: number;
+  protected readonly timeoutMs: number;
+  protected readonly asyncThresholdMs: number;
+  protected drainTimer: ReturnType<typeof setTimeout> | null = null;
+  protected drainFn: DrainFunction | null = null;
 
   constructor(maxSize: number, timeoutMs: number, asyncThresholdMs: number) {
     this.maxSize = maxSize;
@@ -76,11 +76,11 @@ export class RequestQueue {
   /**
    * Poll for an async job result
    */
-  poll(jobId: string): {
+  async poll(jobId: string): Promise<{
     status: 'pending' | 'done' | 'error' | 'expired' | 'not_found';
     result?: RouterResult;
     error?: string;
-  } {
+  }> {
     const job = this.jobs.get(jobId);
     if (!job) return { status: 'not_found' };
 
@@ -113,7 +113,7 @@ export class RequestQueue {
   /**
    * Process all pending jobs FIFO, skipping expired ones
    */
-  private async drain(): Promise<void> {
+  protected async drain(): Promise<void> {
     if (!this.drainFn) return;
 
     const pendingJobs = [...this.jobs.values()]

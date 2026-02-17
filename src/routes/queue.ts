@@ -7,7 +7,7 @@ export function createQueueRoutes(queue: RequestQueue) {
       '/v1/queue/:jobId',
       async (request, reply) => {
         const { jobId } = request.params;
-        const result = queue.poll(jobId);
+        const result = await queue.poll(jobId);
 
         switch (result.status) {
           case 'not_found':

@@ -7,7 +7,7 @@ import {
   type RateLimitHeaders,
 } from '../utils/headers.js';
 
-interface ProviderModelState {
+export interface ProviderModelState {
   coolingDown: boolean;
   cooldownUntil: number; // epoch ms; 0 = not cooling
   remainingRequests: number | null;
@@ -21,8 +21,8 @@ function makeKey(provider: Provider, model: string): string {
 }
 
 export class RateLimitTracker {
-  private readonly state = new Map<string, ProviderModelState>();
-  private readonly lowThreshold: number;
+  protected readonly state = new Map<string, ProviderModelState>();
+  protected readonly lowThreshold: number;
 
   constructor(lowRequestsThreshold: number) {
     this.lowThreshold = lowRequestsThreshold;

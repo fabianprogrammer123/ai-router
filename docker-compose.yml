@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - router_net
+
   ai-router:
     build:
       context: .
@@ -11,13 +25,24 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
     restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-    # Uncomment for development hot-reload:
-    # volumes:
-    #   - ./src:/app/src
+    networks:
+      - router_net
+    # Scale with: docker compose up --scale ai-router=2
+    # (requires nginx load balancer — see docker/nginx.conf)
+
+volumes:
+  redis_data:
+
+networks:
+  router_net:

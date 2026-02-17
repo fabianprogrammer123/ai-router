@@ -74,6 +74,10 @@ export function createChatRoutes(router: Router, routerApiKey: string) {
           // RouterResult — has provider, model, response
           const routerResult = executeResult;
 
+          // Expose which provider/model actually served this request
+          void reply.header('x-ai-router-provider', routerResult.provider);
+          void reply.header('x-ai-router-model', routerResult.model);
+
           // Handle streaming
           if (body.stream && routerResult.response.stream) {
             reply.raw.setHeader('Content-Type', 'text/event-stream');

@@ -51,8 +51,8 @@ describe('RequestQueue', () => {
   });
 
   describe('poll', () => {
-    it('returns not_found for unknown jobId', () => {
-      const result = queue.poll('unknown-id');
+    it('returns not_found for unknown jobId', async () => {
+      const result = await queue.poll('unknown-id');
       expect(result.status).toBe('not_found');
     });
 
@@ -63,7 +63,7 @@ describe('RequestQueue', () => {
       const enqueued = await queue.enqueue(Capability.Chat, 'gpt-4o', 10000);
       if (enqueued.mode !== 'async') throw new Error('Expected async mode');
 
-      const polled = queue.poll(enqueued.jobId);
+      const polled = await queue.poll(enqueued.jobId);
       expect(polled.status).toBe('pending');
     });
   });
