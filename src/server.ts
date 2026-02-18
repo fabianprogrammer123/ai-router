@@ -19,6 +19,7 @@ import { createImageRoutes } from './routes/images.js';
 import { createEmbeddingRoutes } from './routes/embeddings.js';
 import { createStatusRoutes } from './routes/status.js';
 import { createQueueRoutes } from './routes/queue.js';
+import { createMessagesRoutes } from './routes/messages.js';
 
 export async function buildApp(): Promise<ReturnType<typeof Fastify>> {
   const fastify = Fastify({
@@ -107,6 +108,7 @@ export async function buildApp(): Promise<ReturnType<typeof Fastify>> {
   await fastify.register(createEmbeddingRoutes(router, config.ROUTER_API_KEY));
   await fastify.register(createStatusRoutes(router));
   await fastify.register(createQueueRoutes(queue));
+  await fastify.register(createMessagesRoutes(router, config.ROUTER_API_KEY));
 
   // ── Error handler ───────────────────────────────────────────────────────
 

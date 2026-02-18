@@ -97,12 +97,52 @@ const openai = new OpenAI({
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/v1/chat/completions` | Chat completions (streaming + non-streaming) |
+| `POST` | `/v1/chat/completions` | Chat completions — OpenAI SDK format |
+| `POST` | `/v1/messages` | Chat completions — Anthropic SDK format |
 | `POST` | `/v1/images/generations` | Image generation |
 | `POST` | `/v1/embeddings` | Text embeddings |
 | `GET` | `/health` | Health check |
 | `GET` | `/v1/providers/status` | Live rate limit + circuit breaker state |
 | `GET` | `/v1/queue/:jobId` | Poll async queued request |
+
+### Response headers (all endpoints)
+
+| Header | Description |
+|--------|-------------|
+| `x-ai-router-provider` | Which provider actually served the request (`openai`, `anthropic`, `google`) |
+| `x-ai-router-model` | Which provider-side model name was used |
+| `x-request-id` | Request tracing ID (echoes your `x-request-id` if provided) |
+
+Use these headers to detect when fallback routing occurred.
+
+### Anthropic SDK integration (`/v1/messages`)
+
+Point the Anthropic SDK (or Claude Code CLI) at the router by setting two environment variables:
+
+```bash
+ANTHROPIC_API_KEY=your-router-key   # same key as ROUTER_API_KEY
+ANTHROPIC_BASE_URL=http://localhost:3000
+```
+
+The router accepts the full Anthropic request format (`system`, `messages`, `max_tokens`, `stream`, `stop_sequences`, etc.) and returns Anthropic-format responses (`type: "message"`, `content: [{type:"text", text:"..."}]`, `stop_reason`, `usage.input_tokens`, etc.).
+
+Streaming also works — the router converts provider streams to the Anthropic event format (`event: content_block_delta`, etc.) regardless of which backend provider served the request.
+
+```bash
+# ClawdBot / Claude Code CLI — just set env vars, no code changes
+export ANTHROPIC_API_KEY=your-router-key
+export ANTHROPIC_BASE_URL=http://your-router-host
+
+# Verify
+curl -X POST http://localhost:3000/v1/messages \
+  -H "x-api-key: your-router-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "messages": [{"role": "user", "content": "Hello!"}],
+    "max_tokens": 100
+  }'
+```
 
 ## Model Mapping
 

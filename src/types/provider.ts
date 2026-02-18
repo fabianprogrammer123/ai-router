@@ -28,6 +28,29 @@ export interface ModelMapping {
 
 // Bidirectional model mapping table
 export const MODEL_MAPPINGS: ModelMapping[] = [
+  // ── OpenAI gpt-4.1 family (April 2025) ──────────────────────────────────
+  {
+    tier: ModelTier.Premium,
+    capability: Capability.Chat,
+    openai: 'gpt-4.1',
+    anthropic: 'claude-opus-4-6',
+    google: 'gemini-1.5-pro',
+  },
+  {
+    tier: ModelTier.Standard,
+    capability: Capability.Chat,
+    openai: 'gpt-4.1-mini',
+    anthropic: 'claude-sonnet-4-6',
+    google: 'gemini-1.5-flash',
+  },
+  {
+    tier: ModelTier.Economy,
+    capability: Capability.Chat,
+    openai: 'gpt-4.1-nano',
+    anthropic: 'claude-haiku-4-5',
+    google: 'gemini-1.5-flash',
+  },
+  // ── OpenAI gpt-4o family ─────────────────────────────────────────────────
   {
     tier: ModelTier.Premium,
     capability: Capability.Chat,
@@ -47,6 +70,35 @@ export const MODEL_MAPPINGS: ModelMapping[] = [
     capability: Capability.Chat,
     openai: 'gpt-3.5-turbo',
     anthropic: 'claude-haiku-4-5',
+    google: 'gemini-1.5-flash',
+  },
+  // ── Claude 3.5 / 3 aliases (used by older Anthropic SDK versions) ────────
+  {
+    tier: ModelTier.Standard,
+    capability: Capability.Chat,
+    openai: 'gpt-4o-mini',
+    anthropic: 'claude-3-5-sonnet-20241022',
+    google: 'gemini-1.5-flash',
+  },
+  {
+    tier: ModelTier.Economy,
+    capability: Capability.Chat,
+    openai: 'gpt-3.5-turbo',
+    anthropic: 'claude-3-5-haiku-20241022',
+    google: 'gemini-1.5-flash',
+  },
+  {
+    tier: ModelTier.Premium,
+    capability: Capability.Chat,
+    openai: 'gpt-4o',
+    anthropic: 'claude-3-opus-20240229',
+    google: 'gemini-1.5-pro',
+  },
+  {
+    tier: ModelTier.Standard,
+    capability: Capability.Chat,
+    openai: 'gpt-4o-mini',
+    anthropic: 'claude-3-sonnet-20240229',
     google: 'gemini-1.5-flash',
   },
   {

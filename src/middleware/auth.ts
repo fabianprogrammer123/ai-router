@@ -2,8 +2,14 @@ import { timingSafeEqual, createHash } from 'crypto';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
 /**
- * Timing-safe Bearer token verification.
- * Prevents timing attacks by using crypto.timingSafeEqual.
+ * Timing-safe API key verification.
+ * Accepts both:
+ *   - OpenAI SDK format:    Authorization: Bearer <key>
+ *   - Anthropic SDK format: x-api-key: <key>
+ *
+ * Both headers are checked against the router's ROUTER_API_KEY.
+ * This allows ClawdBot (which uses the Anthropic SDK) to point at the router
+ * by setting ANTHROPIC_API_KEY=<ROUTER_API_KEY>.
  */
 export function createAuthMiddleware(routerApiKey: string) {
   // Pre-hash the key to ensure fixed-length comparison
@@ -13,12 +19,13 @@ export function createAuthMiddleware(routerApiKey: string) {
     request: FastifyRequest,
     reply: FastifyReply
   ): Promise<void> {
-    const authHeader = request.headers.authorization;
+    // Extract token from whichever auth header is present
+    const token = extractToken(request);
 
-    if (!authHeader) {
+    if (!token) {
       await reply.status(401).send({
         error: {
-          message: 'Missing Authorization header',
+          message: 'Missing authentication. Provide Authorization: Bearer <key> or x-api-key: <key>',
           type: 'invalid_request_error',
           code: 'missing_api_key',
         },
@@ -26,19 +33,7 @@ export function createAuthMiddleware(routerApiKey: string) {
       return;
     }
 
-    if (!authHeader.startsWith('Bearer ')) {
-      await reply.status(401).send({
-        error: {
-          message: 'Authorization header must use Bearer scheme',
-          type: 'invalid_request_error',
-          code: 'invalid_api_key',
-        },
-      });
-      return;
-    }
-
-    const providedKey = authHeader.slice(7).trim();
-    const providedBuffer = createHash('sha256').update(providedKey).digest();
+    const providedBuffer = createHash('sha256').update(token).digest();
 
     let isValid = false;
     try {
@@ -57,4 +52,24 @@ export function createAuthMiddleware(routerApiKey: string) {
       });
     }
   };
+}
+
+/**
+ * Extract the API key token from the request.
+ * Priority: x-api-key header → Authorization: Bearer token
+ */
+function extractToken(request: FastifyRequest): string | null {
+  // Anthropic SDK sends x-api-key
+  const xApiKey = request.headers['x-api-key'];
+  if (xApiKey && typeof xApiKey === 'string') {
+    return xApiKey.trim();
+  }
+
+  // OpenAI SDK sends Authorization: Bearer <token>
+  const authHeader = request.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+
+  return null;
 }
