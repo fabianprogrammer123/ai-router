@@ -131,13 +131,18 @@ export const MODEL_MAPPINGS: ModelMapping[] = [
   },
 ];
 
+const MODEL_LOOKUP: Map<string, ModelMapping> = new Map();
+for (const mapping of MODEL_MAPPINGS) {
+  if (!MODEL_LOOKUP.has(mapping.openai)) MODEL_LOOKUP.set(mapping.openai, mapping);
+  if (mapping.anthropic && !MODEL_LOOKUP.has(mapping.anthropic)) MODEL_LOOKUP.set(mapping.anthropic, mapping);
+  if (mapping.google && !MODEL_LOOKUP.has(mapping.google)) MODEL_LOOKUP.set(mapping.google, mapping);
+}
+
 /**
  * Find the model mapping for any given model name (searches all providers)
  */
 export function findModelMapping(modelName: string): ModelMapping | undefined {
-  return MODEL_MAPPINGS.find(
-    (m) => m.openai === modelName || m.anthropic === modelName || m.google === modelName
-  );
+  return MODEL_LOOKUP.get(modelName);
 }
 
 /**
